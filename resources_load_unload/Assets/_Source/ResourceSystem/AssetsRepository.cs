@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,16 +7,6 @@ namespace ResourceSystem
     public class AssetsRepository : IRepository
     {
         private readonly Dictionary<GUID, object> _assets = new();
-        private readonly Dictionary<Type, HashSet<object>> _hashAssets = new();
-
-        public bool IsInRepository(object obj)
-        {
-            if (!_hashAssets.ContainsKey(obj.GetType()))
-                return false;
-
-            _hashAssets.TryGetValue(obj.GetType(), out var set);
-            return set != null && set.Contains(obj);
-        }
 
         public bool IsInRepository(GUID guid) => _assets.ContainsKey(guid);
 
@@ -43,25 +31,14 @@ namespace ResourceSystem
 
         public bool AddToRepository(object obj, GUID guid)
         {
-            if (!_hashAssets.ContainsKey(obj.GetType()))
-                _hashAssets.Add(obj.GetType(), new HashSet<object>());
-
+            if (IsInRepository(guid))
+            {
+                Debug.LogWarning("Trying to add asset with guid that is already in the repository!");
+                return false;
+            }
+            
             _assets.TryAdd(guid, obj);
 
-            if (!IsInRepository(obj))
-                return true;
-
-            Debug.LogWarning("Trying to add asset to a hash asset that is already in the repository!");
-            return false;
-        }
-
-        public bool RemoveFromRepository(object obj)
-        {
-            if (!IsInRepository(obj))
-                return false;
-
-            _assets.Remove(_assets.First(x => x.Value == obj).Key);
-            _hashAssets[obj.GetType()].Remove(obj);
             return true;
         }
 
@@ -71,14 +48,12 @@ namespace ResourceSystem
                 return false;
 
             _assets.Remove(guid);
-            _hashAssets[_assets[guid].GetType()].Remove(_assets[guid]);
             return true;
         }
 
         public void Dispose()
         {
             _assets.Clear();
-            _hashAssets.Clear();
         }
     }
 }

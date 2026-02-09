@@ -1,19 +1,23 @@
 using UnityEditor;
+using UnityEngine;
 
 namespace ResourceSystem
 {
     public class ResourceManager : IResourceManager
     {
-        private IRepository _repository = new AssetsRepository();
+        private readonly IRepository _repository = new AssetsRepository();
         
-        public T Load<T>(string path, out GUID id)
+        public T Load<T>(string path, out GUID id) where T : Object
         {
-            throw new System.NotImplementedException();
+            id = GUID.Generate();
+            var loaded = Resources.Load<T>(path);
+            _repository.AddToRepository(loaded, id);
+            return loaded;
         }
 
         public void Unload(GUID id)
         {
-            throw new System.NotImplementedException();
+            _repository.RemoveFromRepository(id);
         }
     }
 }
